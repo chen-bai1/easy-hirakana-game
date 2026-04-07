@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>五十音图平假名排序小游戏</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background:
+        radial-gradient(circle at 10% 12%, #ffe4f0 0 7%, transparent 7.2%),
+        radial-gradient(circle at 88% 18%, #dff6ff 0 7%, transparent 7.2%),
+        radial-gradient(circle at 15% 82%, #fff2ba 0 8%, transparent 8.2%),
+        radial-gradient(circle at 88% 82%, #eadcff 0 7%, transparent 7.2%),
+        linear-gradient(135deg, #fff8fb 0%, #f7fcff 50%, #fffbea 100%);
+      color: #5f4d5e;
+    }
+
+    .app {
+      width: 100%;
+      min-height: 100vh;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header {
+      text-align: center;
+      padding-top: max(4px, env(safe-area-inset-top));
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(28px, 7vw, 40px);
+      font-weight: 900;
+      color: #ff4f8b;
+      letter-spacing: 1px;
+      text-shadow: 0 3px 0 #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .top-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.92);
+      border: 3px solid #ffd4e4;
+      border-radius: 24px;
+      box-shadow: 0 10px 24px rgba(255, 145, 188, 0.15);
+      padding: 14px 12px;
+      text-align: center;
+    }
+
+    .panel.time-panel {
+      border-color: #d7ebff;
+      box-shadow: 0 10px 24px rgba(122, 199, 255, 0.15);
+    }
+
+    .panel-label {
+      font-size: 15px;
+      font-weight: 800;
+      color: #8a7d86;
+      margin-bottom: 8px;
+    }
+
+    .panel-value {
+      font-size: clamp(30px, 8vw, 46px);
+      line-height: 1;
+      font-weight: 900;
+      color: #ff4f8b;
+    }
+
+    .time-panel .panel-value {
+      color: #448cff;
+    }
+
+    .center-panel {
+      background: rgba(255,255,255,0.94);
+      border: 3px solid #dff2ff;
+      border-radius: 28px;
+      box-shadow: 0 12px 28px rgba(122, 199, 255, 0.14);
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .selected-box {
+      background: linear-gradient(135deg, #fffafe, #f4fdff);
+      border: 2px dashed #ffc8de;
+      border-radius: 22px;
+      padding: 12px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 17px;
+      font-weight: 900;
+      color: #755f71;
+      margin-bottom: 10px;
+    }
+
+    .selected-list {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .selected-item {
+      min-height: 56px;
+      border-radius: 16px;
+      background: #fff;
+      border: 2px solid #ffe0eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(24px, 6vw, 34px);
+      font-weight: 900;
+      color: #ff4f8b;
+      box-shadow: inset 0 -3px 0 rgba(255, 177, 206, 0.16);
+    }
+
+    .selected-item.empty {
+      color: #dac9d1;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .status-bar {
+      background: linear-gradient(135deg, #fff3c3, #fff0f7);
+      border: 2px solid #ffe7a1;
+      border-radius: 18px;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .status-item {
+      font-size: 16px;
+      font-weight: 800;
+      color: #695b61;
+    }
+
+    .status-item strong {
+      color: #ff4f8b;
+      font-size: 19px;
+    }
+
+    .board {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .kana-btn {
+      border: none;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #ffffff 0%, #fff1f7 100%);
+      box-shadow: 0 7px 0 #ffd9e7, 0 10px 18px rgba(255, 151, 190, 0.18);
+      min-height: 72px;
+      font-size: clamp(30px, 8vw, 46px);
+      font-weight: 900;
+      color: #5f4d5e;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+      user-select: none;
+    }
+
+    .kana-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #ffd9e7, 0 5px 10px rgba(255, 151, 190, 0.18);
+    }
+
+    .kana-btn.correct {
+      background: linear-gradient(180deg, #efffed, #d8ffd8);
+      box-shadow: 0 7px 0 #b6eeb3, 0 10px 18px rgba(118, 209, 118, 0.22);
+      color: #2f7a32;
+    }
+
+    .kana-btn.wrong {
+      background: linear-gradient(180deg, #fff0f0, #ffd7d7);
+      box-shadow: 0 7px 0 #ffb6b6, 0 10px 18px rgba(255, 118, 118, 0.22);
+      color: #b43c3c;
+    }
+
+    .flying-kana {
+      position: fixed;
+      z-index: 150;
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fffefc 0%, #fff3f8 100%);
+      border: 2px solid #ffd7e6;
+      box-shadow: 0 10px 18px rgba(255, 142, 184, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 900;
+      color: #ff4f8b;
+      pointer-events: none;
+      transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.55s ease;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 247, 252, 0.88);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 16px;
+    }
+
+    .overlay-card {
+      width: min(92vw, 680px);
+      background: #fff;
+      border-radius: 28px;
+      border: 4px solid #ffd8e8;
+      box-shadow: 0 18px 38px rgba(255, 132, 180, 0.2);
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .overlay-title {
+      font-size: clamp(28px, 7vw, 40px);
+      font-weight: 900;
+      color: #ff4f8b;
+      margin-bottom: 12px;
+    }
+
+    .overlay-text {
+      font-size: 16px;
+      line-height: 1.85;
+      color: #6c5f6a;
+      margin-bottom: 18px;
+    }
+
+    .winner-text {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ff4f8b;
+      margin: 12px 0 16px;
+    }
+
+    .primary-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 30px;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, #ff76a6, #ff9f67);
+      box-shadow: 0 12px 24px rgba(255, 131, 170, 0.28);
+      cursor: pointer;
+    }
+
+    @media (min-width: 700px) {
+      .app { padding: 18px; }
+      .board { grid-template-columns: repeat(5, 1fr); }
+      .kana-btn { min-height: 96px; }
+      .selected-item { min-height: 72px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="startOverlay">
+    <div class="overlay-card">
+      <div class="overlay-title">五十音图平假名排序小游戏</div>
+      <div class="overlay-text">
+        单人游戏：按照五十音图顺序从 <strong>あ</strong> 开始点击平假名。<br>
+        选择正确加 <strong>10 分</strong>，选择错误减 <strong>10 分</strong>。<br>
+        游戏开始后会自动记录总用时，完成全部排序后显示最终得分和总时间。
+      </div>
+      <button class="primary-btn" id="startBtn">开始游戏</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="endOverlay" style="display:none;">
+    <div class="overlay-card">
+      <div class="overlay-title">🎉 游戏完成 🎉</div>
+      <div class="winner-text" id="winnerText"></div>
+      <div class="overlay-text" id="finalDetail"></div>
+      <button class="primary-btn" id="restartBtn">再来一局</button>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="header">
+      <h1 class="title">五十音图平假名排序小游戏</h1>
+    </div>
+
+    <div class="layout">
+      <div class="top-panels">
+        <div class="panel">
+          <div class="panel-label">得分</div>
+          <div class="panel-value" id="score">0</div>
+        </div>
+        <div class="panel time-panel">
+          <div class="panel-label">总时间</div>
+          <div class="panel-value" id="totalTime">00:00</div>
+        </div>
+      </div>
+
+      <div class="center-panel">
+        <div class="selected-box">
+          <div class="section-title">已排好序的平假名（最近5个）</div>
+          <div class="selected-list" id="selectedList"></div>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-item">进度：<strong id="progressText">0 / 46</strong></div>
+        </div>
+
+        <div class="board" id="board"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const kanaOrder = [
+      "あ","い","う","え","お",
+      "か","き","く","け","こ",
+      "さ","し","す","せ","そ",
+      "た","ち","つ","て","と",
+      "な","に","ぬ","ね","の",
+      "は","ひ","ふ","へ","ほ",
+      "ま","み","む","め","も",
+      "や","ゆ","よ",
+      "ら","り","る","れ","ろ",
+      "わ","を","ん"
+    ];
+
+    const boardEl = document.getElementById("board");
+    const selectedListEl = document.getElementById("selectedList");
+    const progressText = document.getElementById("progressText");
+    const scoreEl = document.getElementById("score");
+    const totalTimeEl = document.getElementById("totalTime");
+    const startOverlay = document.getElementById("startOverlay");
+    const endOverlay = document.getElementById("endOverlay");
+    const winnerText = document.getElementById("winnerText");
+    const finalDetail = document.getElementById("finalDetail");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let currentIndex = 0;
+    let score = 0;
+    let selectedKana = [];
+    let gameStarted = false;
+    let gameEnded = false;
+    let startTime = 0;
+    let timeInterval = null;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function tone(freq = 440, duration = 0.15, type = "sine", volume = 0.05) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function playCorrectSound() {
+      tone(660, 0.08, "triangle", 0.05);
+      setTimeout(() => tone(880, 0.1, "triangle", 0.06), 90);
+      setTimeout(() => tone(1100, 0.18, "triangle", 0.07), 180);
+    }
+
+    function playWrongSound() {
+      tone(260, 0.14, "sawtooth", 0.06);
+      setTimeout(() => tone(180, 0.18, "sawtooth", 0.05), 120);
+    }
+
+    function speakKana(kana) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(kana);
+      utter.lang = "ja-JP";
+      utter.rate = 0.82;
+      utter.pitch = 1.12;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function getDisplayedKana() {
+      return selectedKana.slice(-5);
+    }
+
+    function updateSelectedList() {
+      selectedListEl.innerHTML = "";
+      const displayed = getDisplayedKana();
+      const blanks = 5 - displayed.length;
+      const list = Array(blanks).fill("").concat(displayed);
+      list.forEach(k => {
+        const div = document.createElement("div");
+        div.className = "selected-item" + (k ? "" : " empty");
+        div.textContent = k || "";
+        selectedListEl.appendChild(div);
+      });
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
+
+    function startGameTimer() {
+      clearInterval(timeInterval);
+      startTime = Date.now();
+      totalTimeEl.textContent = "00:00";
+      timeInterval = setInterval(() => {
+        totalTimeEl.textContent = formatTime(Date.now() - startTime);
+      }, 200);
+    }
+
+    function stopGameTimer() {
+      clearInterval(timeInterval);
+      timeInterval = null;
+    }
+
+    function updateStatus() {
+      scoreEl.textContent = score;
+      progressText.textContent = `${selectedKana.length} / ${kanaOrder.length}`;
+    }
+
+    function generateOptions() {
+      const correct = kanaOrder[currentIndex];
+      const pool = kanaOrder.filter(k => k !== correct);
+      const distractors = shuffle(pool).slice(0, 9);
+      return shuffle([correct, ...distractors]);
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      const options = generateOptions();
+      options.forEach(kana => {
+        const btn = document.createElement("button");
+        btn.className = "kana-btn";
+        btn.textContent = kana;
+        btn.dataset.kana = kana;
+        btn.addEventListener("click", () => handleKanaClick(kana, btn));
+        boardEl.appendChild(btn);
+      });
+    }
+
+    function lockBoard(lock = true) {
+      const buttons = boardEl.querySelectorAll(".kana-btn");
+      buttons.forEach(btn => btn.disabled = lock);
+    }
+
+    function animateKanaFly(sourceBtn, kana, callback) {
+      const displayed = getDisplayedKana();
+      const oldLength = displayed.length;
+      const newLength = Math.min(oldLength + 1, 5);
+      const blanksAfterAdd = 5 - newLength;
+      const slotIndex = blanksAfterAdd + (newLength - 1);
+      const targetSlots = selectedListEl.querySelectorAll(".selected-item");
+      const targetEl = targetSlots[slotIndex];
+
+      if (!sourceBtn || !targetEl) {
+        callback();
+        return;
+      }
+
+      const sourceRect = sourceBtn.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const fly = document.createElement("div");
+      fly.className = "flying-kana";
+      fly.textContent = kana;
+      fly.style.left = sourceRect.left + "px";
+      fly.style.top = sourceRect.top + "px";
+      fly.style.width = sourceRect.width + "px";
+      fly.style.height = sourceRect.height + "px";
+      document.body.appendChild(fly);
+
+      const dx = (targetRect.left + targetRect.width / 2) - (sourceRect.left + sourceRect.width / 2);
+      const dy = (targetRect.top + targetRect.height / 2) - (sourceRect.top + sourceRect.height / 2);
+
+      requestAnimationFrame(() => {
+        fly.style.transform = `translate(${dx}px, ${dy}px) scale(0.92)`;
+        fly.style.opacity = "0.9";
+      });
+
+      setTimeout(() => {
+        fly.remove();
+        callback();
+      }, 560);
+    }
+
+    function handleKanaClick(kana, btn) {
+      if (!gameStarted || gameEnded) return;
+      lockBoard(true);
+      speakKana(kana);
+
+      const correctKana = kanaOrder[currentIndex];
+      if (kana === correctKana) {
+        btn.classList.add("correct");
+        playCorrectSound();
+        score += 10;
+
+        animateKanaFly(btn, kana, () => {
+          selectedKana.push(kana);
+          currentIndex++;
+          updateSelectedList();
+          updateStatus();
+
+          setTimeout(() => {
+            if (currentIndex >= kanaOrder.length) {
+              endGame();
+              return;
+            }
+            renderBoard();
+          }, 220);
+        });
+      } else {
+        btn.classList.add("wrong");
+        playWrongSound();
+        score -= 10;
+        updateStatus();
+        setTimeout(() => {
+          lockBoard(false);
+          btn.classList.remove("wrong");
+        }, 320);
+      }
+    }
+
+    function endGame() {
+      gameEnded = true;
+      stopGameTimer();
+      lockBoard(true);
+      const usedMs = Date.now() - startTime;
+      const finalTime = formatTime(usedMs);
+      totalTimeEl.textContent = finalTime;
+      winnerText.textContent = `最终得分：${score} 分`;
+      finalDetail.innerHTML = `
+        你已完成全部 <strong>${kanaOrder.length}</strong> 个平假名的排序。<br>
+        本局总时间：<strong>${finalTime}</strong><br>
+        最终得分：<strong>${score}</strong> 分
+      `;
+      endOverlay.style.display = "flex";
+    }
+
+    function resetGame() {
+      currentIndex = 0;
+      score = 0;
+      selectedKana = [];
+      gameStarted = true;
+      gameEnded = false;
+      updateSelectedList();
+      updateStatus();
+      renderBoard();
+      startGameTimer();
+      lockBoard(false);
+    }
+
+    startBtn.addEventListener("click", () => {
+      initAudio();
+      startOverlay.style.display = "none";
+      resetGame();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      initAudio();
+      endOverlay.style.display = "none";
+      resetGame();
+    });
+
+    updateSelectedList();
+    updateStatus();
+  </script>
+</body>
+</html>
